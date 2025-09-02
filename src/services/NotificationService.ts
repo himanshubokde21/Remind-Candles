@@ -1,22 +1,58 @@
 import { WishingService } from './WishingService';
+import type { NotificationSettings, NotificationSound } from '../types/notification';
+import { DEFAULT_NOTIFICATION_SETTINGS } from '../types/notification';
+import type { Birthday } from './BirthdayService';
 
 export interface BirthdayPerson {
   id: string;
   name: string;
   birthDate: Date;
   age?: number;
+  email?: string;
+  phone?: string;
+  customWish?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export class NotificationService {
   private static instance: NotificationService;
-  private notificationSound: HTMLAudioElement | null = null;
+  private sounds: Record<NotificationSound, HTMLAudioElement | null> = {
+    'soft-chime': null,
+    'birthday-tune': null,
+    'loud-alert': null
+  };
   private hasPermission: boolean = false;
+  private settings: NotificationSettings;
 
   private constructor() {
     if (typeof window !== 'undefined') {
-      this.notificationSound = new Audio('/sounds/birthday-notification.mp3');
+      this.sounds = {
+        'soft-chime': new Audio('/sounds/soft-chime.mp3'),
+        'birthday-tune': new Audio('/sounds/birthday-notification.mp3'),
+        'loud-alert': new Audio('/sounds/loud-alert.mp3')
+      };
       this.checkPermission();
     }
+    this.settings = this.loadSettings();
+  }
+
+  private loadSettings(): NotificationSettings {
+    const savedSettings = localStorage.getItem('notificationSettings');
+    return savedSettings ? JSON.parse(savedSettings) : DEFAULT_NOTIFICATION_SETTINGS;
+  }
+
+  private saveSettings(settings: NotificationSettings): void {
+    localStorage.setItem('notificationSettings', JSON.stringify(settings));
+    this.settings = settings;
+  }
+
+  public getSettings(): NotificationSettings {
+    return { ...this.settings };
+  }
+
+  public updateSettings(settings: NotificationSettings): void {
+    this.saveSettings(settings);
   }
 
   public static getInstance(): NotificationService {
@@ -45,7 +81,7 @@ export class NotificationService {
     return this.hasPermission;
   }
 
-  public async sendBirthdayNotification(person: BirthdayPerson): Promise<void> {
+  public async sendBirthdayNotification(person: BirthdayPerson, daysAway: number = 0): Promise<void> {
     if (!this.hasPermission) {
       await this.checkPermission();
     }
@@ -56,23 +92,31 @@ export class NotificationService {
     }
 
     const age = person.age ? ` turns ${person.age}` : '';
+    const timeMessage = daysAway === 0 ? 'today' : `in ${daysAway} day${daysAway > 1 ? 's' : ''}`;
+    
     const notification = new Notification('🎂 Birthday Reminder!', {
-      body: `${person.name}${age} today! Time to celebrate! 🎉`,
+      body: `${person.name}${age} ${timeMessage}! ${daysAway === 0 ? 'Time to celebrate! 🎉' : 'Get ready to celebrate! 🎈'}`,
       icon: '/cake-icon.png',
       badge: '/cake-icon.png',
       requireInteraction: true,
+      tag: `birthday-${person.id}-${daysAway}` // Prevent duplicate notifications
     });
 
-    // Play notification sound
-    if (this.notificationSound) {
+    // Play selected notification sound
+    const selectedSound = this.sounds[this.settings.sound];
+    if (selectedSound) {
       try {
-        await this.notificationSound.play();
+        await selectedSound.play();
       } catch (error) {
         console.warn('Could not play notification sound:', error);
       }
     }
 
     notification.onclick = () => {
+      if (daysAway === 0) {
+        const wishingService = WishingService.getInstance();
+        wishingService.openWishingInterface(person);
+      }
       window.focus();
       notification.close();
     };
@@ -84,21 +128,36 @@ export class NotificationService {
     
     for (const person of birthdays) {
       const birthday = new Date(person.birthDate);
+      const thisYearBirthday = new Date(
+        today.getFullYear(),
+        birthday.getMonth(),
+        birthday.getDate()
+      );
       
-      // Check if it's the person's birthday (comparing month and day)
-      if (birthday.getMonth() === today.getMonth() && 
-          birthday.getDate() === today.getDate()) {
+      // Calculate days until birthday
+      const timeDiff = thisYearBirthday.getTime() - today.getTime();
+      const daysUntilBirthday = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+      
+      // Check if we should notify based on settings
+      if (daysUntilBirthday === this.settings.advanceDays) {
+        const personToNotify = { ...person };
         
-        // Calculate age if birthYear is available
-        if (birthday.getFullYear() !== 1) { // Check if year was provided
-          person.age = today.getFullYear() - birthday.getFullYear();
+        // Only calculate and set age on the actual birthday
+        if (daysUntilBirthday === 0 && birthday.getFullYear() !== 1) {
+          personToNotify.age = today.getFullYear() - birthday.getFullYear();
+          
+          // Send birthday wish on the actual day
+          const birthdayData: Birthday = {
+            ...personToNotify,
+            birthDate: personToNotify.birthDate.toISOString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          await wishingService.sendBirthdayWish(birthdayData);
         }
         
         // Send notification
-        await this.sendBirthdayNotification(person);
-
-        // Send birthday wish
-        await wishingService.sendBirthdayWish(person as any); // Type cast as the interfaces slightly differ
+        await this.sendBirthdayNotification(personToNotify, daysUntilBirthday);
       }
     }
   }

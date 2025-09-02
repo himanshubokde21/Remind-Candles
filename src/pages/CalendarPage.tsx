@@ -1,4 +1,5 @@
 import { Typography, Paper } from '@mui/material';
+import { BirthdayCalendar } from '../components/BirthdayCalendar';
 
 export const CalendarPage = () => {
   return (
@@ -13,9 +14,7 @@ export const CalendarPage = () => {
       <Typography variant="h4" gutterBottom color="primary">
         Birthday Calendar
       </Typography>
-      <Typography variant="body1">
-        View all birthdays in a calendar format...
-      </Typography>
+      <BirthdayCalendar />
     </Paper>
   );
 };

@@ -1,4 +1,5 @@
 import type { Birthday } from './BirthdayService';
+import type { BirthdayPerson } from './NotificationService';
 import { EmailService } from './EmailService';
 import { WhatsAppService } from './WhatsAppService';
 
@@ -81,6 +82,9 @@ export class WishingService {
     }
   }
 
+
+
+
   private cleanupWishingSessions(): void {
     const twoDaysAgo = new Date();
     twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
@@ -92,6 +96,29 @@ export class WishingService {
       if (sessionDate < twoDaysAgo) {
         this.wishingSessions.delete(sessionKey);
       }
+    }
+  }
+
+  public openWishingInterface(person: Birthday | BirthdayPerson): void {
+    // Convert BirthdayPerson to Birthday if needed
+    const birthday: Birthday = 'birthDate' in person && person.birthDate instanceof Date ? {
+      ...person,
+      birthDate: person.birthDate.toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    } as Birthday : person as Birthday;
+
+    // Open appropriate interface based on available contact methods
+    if (birthday.phone) {
+      // Open WhatsApp with pre-filled message
+      const message = encodeURIComponent(birthday.customWish || DEFAULT_WISH);
+      const whatsappUrl = `https://wa.me/${birthday.phone}?text=${message}`;
+      window.open(whatsappUrl, '_blank');
+    } else if (birthday.email) {
+      // Open default email client
+      const subject = encodeURIComponent('Happy Birthday! 🎉');
+      const body = encodeURIComponent(birthday.customWish || DEFAULT_WISH);
+      window.open(`mailto:${birthday.email}?subject=${subject}&body=${body}`, '_blank');
     }
   }
 }

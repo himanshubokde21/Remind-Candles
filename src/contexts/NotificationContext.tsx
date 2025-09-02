@@ -2,11 +2,15 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { NotificationService } from '../services/NotificationService';
 import type { BirthdayPerson } from '../services/NotificationService';
 
+import type { NotificationSettings } from '../types/notification';
+
 interface NotificationContextType {
   hasPermission: boolean;
   requestPermission: () => Promise<boolean>;
   sendNotification: (person: BirthdayPerson) => Promise<void>;
   scheduleBirthdayChecks: (birthdays: BirthdayPerson[]) => void;
+  settings: NotificationSettings;
+  updateSettings: (settings: NotificationSettings) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -14,6 +18,9 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 export const NotificationProvider = ({ children }: { children: React.ReactNode }) => {
   const [notificationService] = useState(() => NotificationService.getInstance());
   const [hasPermission, setHasPermission] = useState(false);
+  const [settings, setSettings] = useState<NotificationSettings>(() => 
+    notificationService.getSettings()
+  );
 
   useEffect(() => {
     const checkPermission = async () => {
@@ -32,6 +39,11 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     },
     sendNotification: (person: BirthdayPerson) => notificationService.sendBirthdayNotification(person),
     scheduleBirthdayChecks: (birthdays: BirthdayPerson[]) => notificationService.scheduleDailyCheck(birthdays),
+    settings,
+    updateSettings: (newSettings: NotificationSettings) => {
+      notificationService.updateSettings(newSettings);
+      setSettings(newSettings);
+    }
   };
 
   return (

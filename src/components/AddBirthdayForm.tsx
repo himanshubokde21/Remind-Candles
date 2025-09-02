@@ -10,11 +10,17 @@ import {
   DialogActions,
   Stack,
   Alert,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  FormHelperText,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useBirthdays } from '../contexts/BirthdayContext';
+import { useWishing } from '../contexts/WishingContext';
 
 const phoneRegExp = /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/;
 
@@ -48,6 +54,8 @@ const validationSchema = Yup.object().shape({
   customWish: Yup.string()
     .max(500, 'Custom wish must be less than 500 characters')
     .trim(),
+  wishId: Yup.string()
+    .required('Please select a birthday wish')
 });
 
 interface AddBirthdayFormProps {
@@ -57,6 +65,7 @@ interface AddBirthdayFormProps {
 
 export const AddBirthdayForm = ({ open, onClose }: AddBirthdayFormProps) => {
   const { addBirthday } = useBirthdays();
+  const { wishes, defaultWish } = useWishing();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const formik = useFormik({
@@ -65,6 +74,7 @@ export const AddBirthdayForm = ({ open, onClose }: AddBirthdayFormProps) => {
       birthDate: null as Date | null,
       email: '',
       phone: '',
+      wishId: defaultWish.id,
       customWish: '',
     },
     validationSchema,
@@ -74,12 +84,13 @@ export const AddBirthdayForm = ({ open, onClose }: AddBirthdayFormProps) => {
           throw new Error('Birth date is required');
         }
 
+        const selectedWish = wishes.find(w => w.id === values.wishId);
         await addBirthday({
           name: values.name,
           birthDate: values.birthDate.toISOString(),
           email: values.email || undefined,
           phone: values.phone || undefined,
-          customWish: values.customWish || undefined,
+          customWish: values.customWish || (selectedWish && selectedWish.content) || undefined,
         });
 
         formik.resetForm();
@@ -158,11 +169,35 @@ export const AddBirthdayForm = ({ open, onClose }: AddBirthdayFormProps) => {
               helperText={formik.touched.phone && formik.errors.phone}
             />
 
+            <FormControl
+              fullWidth
+              error={formik.touched.wishId && Boolean(formik.errors.wishId)}
+            >
+              <InputLabel id="wish-select-label">Birthday Wish</InputLabel>
+              <Select
+                labelId="wish-select-label"
+                id="wishId"
+                name="wishId"
+                value={formik.values.wishId}
+                onChange={formik.handleChange}
+                label="Birthday Wish"
+              >
+                {wishes.map(wish => (
+                  <MenuItem key={wish.id} value={wish.id}>
+                    {wish.name}
+                  </MenuItem>
+                ))}
+              </Select>
+              {formik.touched.wishId && formik.errors.wishId && (
+                <FormHelperText>{formik.errors.wishId as string}</FormHelperText>
+              )}
+            </FormControl>
+
             <TextField
               fullWidth
               id="customWish"
               name="customWish"
-              label="Custom Birthday Wish (optional)"
+              label="Custom Birthday Wish (optional, overrides selected wish)"
               multiline
               rows={3}
               value={formik.values.customWish}
