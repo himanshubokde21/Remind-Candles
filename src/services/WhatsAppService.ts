@@ -18,7 +18,9 @@ export class WhatsAppService {
     try {
       // Format the phone number and message
       const formattedPhone = this.formatPhoneNumber(phone);
-      const encodedMessage = encodeURIComponent(message);
+      // Include the name in the message
+      const personalizedMessage = `Hi ${name}, ${message}`;
+      const encodedMessage = encodeURIComponent(personalizedMessage);
       
       // Create WhatsApp URL
       const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;

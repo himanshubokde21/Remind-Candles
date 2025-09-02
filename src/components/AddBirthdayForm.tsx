@@ -18,24 +18,36 @@ import { useBirthdays } from '../contexts/BirthdayContext';
 
 const phoneRegExp = /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/;
 
-const validationSchema = Yup.object({
-  name: Yup.string().required('Name is required'),
+const validationSchema = Yup.object().shape({
+  name: Yup.string()
+    .required('Name is required')
+    .min(2, 'Name must be at least 2 characters')
+    .max(50, 'Name must be less than 50 characters'),
   birthDate: Yup.date()
     .required('Birth date is required')
-    .max(new Date(), 'Birth date cannot be in the future'),
+    .max(new Date(), 'Birth date cannot be in the future')
+    .nullable(),
   email: Yup.string()
     .email('Invalid email address')
-    .when('phone', {
-      is: (phone: string) => !phone || phone.length === 0,
-      then: (schema) => schema.required('Either email or phone number is required'),
+    .trim()
+    .test('emailOrPhone', 'At least one contact method is required', function(value) {
+      // @ts-ignore - parent is available in test context
+      const { phone } = this.parent;
+      if (!value && !phone) return false;
+      return true;
     }),
   phone: Yup.string()
-    .matches(phoneRegExp, 'Invalid phone number')
-    .when('email', {
-      is: (email: string) => !email || email.length === 0,
-      then: (schema) => schema.required('Either email or phone number is required'),
+    .matches(phoneRegExp, 'Invalid phone number format')
+    .trim()
+    .test('phoneOrEmail', 'At least one contact method is required', function(value) {
+      // @ts-ignore - parent is available in test context
+      const { email } = this.parent;
+      if (!value && !email) return false;
+      return true;
     }),
-  customWish: Yup.string(),
+  customWish: Yup.string()
+    .max(500, 'Custom wish must be less than 500 characters')
+    .trim(),
 });
 
 interface AddBirthdayFormProps {
