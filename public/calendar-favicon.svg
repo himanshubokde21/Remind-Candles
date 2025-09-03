@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="56" y="96" width="400" height="360" rx="32" fill="#1A1A1A"/>
+  <path d="M96 64C96 55.1634 103.163 48 112 48H400C408.837 48 416 55.1634 416 64V96H96V64Z" fill="#1A1A1A"/>
+  <rect x="96" y="144" width="320" height="264" rx="16" fill="#0D0D0D"/>
+  <g filter="url(#glow)">
+    <rect x="128" y="176" width="64" height="64" rx="8" fill="url(#gradient)"/>
+    <path d="M128 240L192 176" stroke="url(#trail)" stroke-width="4"/>
+    <circle cx="192" cy="176" r="4" fill="#FFD700"/>
+    <circle cx="176" cy="192" r="3" fill="#FFA500"/>
+    <circle cx="160" cy="208" r="2" fill="#FF4500"/>
+  </g>
+  <defs>
+    <filter id="glow" x="0" y="0" width="512" height="512" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+    <linearGradient id="gradient" x1="128" y1="176" x2="192" y2="240" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFD700"/>
+      <stop offset="50%" stop-color="#FFA500"/>
+      <stop offset="100%" stop-color="#FF4500"/>
+    </linearGradient>
+    <linearGradient id="trail" x1="128" y1="240" x2="192" y2="176" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF4500" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#FFD700"/>
+    </linearGradient>
+  </defs>
+</svg>
