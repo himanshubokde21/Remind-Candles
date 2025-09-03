@@ -1,7 +1,10 @@
 import { createTheme } from '@mui/material/styles';
+import type { ThemeOptions } from '@mui/material/styles';
+import type { PaletteMode } from '@mui/material';
 
-export const theme = createTheme({
+const getDesignTokens = (mode: PaletteMode): ThemeOptions => ({
   palette: {
+    mode,
     primary: {
       main: '#FFB5E8', // Soft pink
       light: '#FFC9E9',
@@ -13,10 +16,13 @@ export const theme = createTheme({
       dark: '#9ED6FF',
     },
     background: {
-      default: '#FFFFFF',
-      paper: '#FFF9FB',
+      default: mode === 'light' ? '#FFFFFF' : '#121212',
+      paper: mode === 'light' ? '#FFF9FB' : '#1E1E1E',
     },
   },
+});
+
+const baseTheme: ThemeOptions = {
   typography: {
     fontFamily: '"Poppins", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
@@ -53,4 +59,12 @@ export const theme = createTheme({
       },
     },
   },
-});
+};
+
+export const createAppTheme = (mode: PaletteMode) => {
+  const themeTokens = getDesignTokens(mode);
+  return createTheme({
+    ...themeTokens,
+    ...baseTheme,
+  });
+};

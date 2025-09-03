@@ -23,13 +23,19 @@ const AppContent = () => {
           component="main"
           sx={{
             flexGrow: 1,
-            p: 3,
+            p: { xs: 2, sm: 3 },
             width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
             ml: { sm: `${DRAWER_WIDTH}px` },
             mt: '64px', // Height of AppBar
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            minHeight: 'calc(100vh - 64px)',
           }}
         >
-          <AnimatedRoutes />
+          <Box sx={{ width: '100%', maxWidth: '1200px', mx: 'auto' }}>
+            <AnimatedRoutes />
+          </Box>
         </Box>
       </Box>
       <Footer />

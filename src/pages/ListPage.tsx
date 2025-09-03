@@ -21,9 +21,12 @@ export const ListPage = () => {
       <Paper
         elevation={0}
         sx={{
-          p: 3,
+          p: { xs: 2, sm: 3 },
           borderRadius: 4,
           backgroundColor: 'background.paper',
+          width: '100%',
+          maxWidth: '800px',
+          mx: 'auto',
         }}
       >
         <Typography variant="h4" gutterBottom color="primary">
@@ -39,8 +42,9 @@ export const ListPage = () => {
       <Box
         sx={{
           position: 'fixed',
-          bottom: 76, // Above footer
-          right: 24,
+          bottom: { xs: 16, sm: 76 }, // Adjusted for mobile
+          right: { xs: 16, sm: 24 },
+          zIndex: 1000,
         }}
       >
         <Fab

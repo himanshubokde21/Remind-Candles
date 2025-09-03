@@ -25,16 +25,22 @@ const GridContainer = styled(Box)(({ theme }) => ({
   display: 'grid',
   gridTemplateColumns: 'repeat(7, 1fr)',
   gap: theme.spacing(1),
+  maxWidth: '100%',
+  margin: '0 auto',
+  [theme.breakpoints.up('sm')]: {
+    maxWidth: '800px',
+  },
 }));
 
 interface DayProps {
   day: number;
   isCurrentMonth: boolean;
   hasBirthday: boolean;
+  isCurrentDay: boolean;
   onClick: () => void;
 }
 
-const CalendarDay = ({ day, isCurrentMonth, hasBirthday, onClick }: DayProps) => {
+const CalendarDay = ({ day, isCurrentMonth, hasBirthday, isCurrentDay, onClick }: DayProps) => {
   const theme = useTheme();
   
   return (
@@ -49,17 +55,22 @@ const CalendarDay = ({ day, isCurrentMonth, hasBirthday, onClick }: DayProps) =>
         alignItems: 'center',
         justifyContent: 'center',
         border: 1,
-        borderColor: 'divider',
+        borderColor: isCurrentDay ? 'primary.main' : 'divider',
         borderRadius: 1,
-        backgroundColor: isCurrentMonth ? 'background.paper' : 'action.hover',
+        backgroundColor: isCurrentDay ? '#FFB6C1' : isCurrentMonth ? 'background.paper' : 'action.hover',
         color: isCurrentMonth ? 'text.primary' : 'text.disabled',
         position: 'relative',
         '&:hover': {
-          backgroundColor: 'action.hover',
+          backgroundColor: isCurrentDay ? '#FFB6C1' : 'action.hover',
         }
       }}
     >
-      <Typography variant="body2">
+      <Typography 
+        variant="body2"
+        sx={{
+          fontWeight: isCurrentDay ? 700 : 400
+        }}
+      >
         {day}
       </Typography>
       {hasBirthday && (
@@ -134,6 +145,7 @@ export const BirthdayCalendar = () => {
     const daysInMonth = getDaysInMonth(currentDate);
     const firstDayOfMonth = getFirstDayOfMonth(currentDate);
     const currentMonth = currentDate.getMonth();
+    const today = new Date();
 
     // Previous month's days
     const daysInPrevMonth = getDaysInMonth(new Date(currentDate.getFullYear(), currentMonth - 1));
@@ -144,6 +156,7 @@ export const BirthdayCalendar = () => {
           key={`prev-${day}`}
           day={day}
           isCurrentMonth={false}
+          isCurrentDay={false}
           hasBirthday={hasBirthdayOnDate(day, currentMonth - 1)}
           onClick={() => {}}
         />
@@ -152,11 +165,17 @@ export const BirthdayCalendar = () => {
 
     // Current month's days
     for (let day = 1; day <= daysInMonth; day++) {
+      const isCurrentDay = 
+        day === today.getDate() && 
+        currentMonth === today.getMonth() && 
+        currentDate.getFullYear() === today.getFullYear();
+
       days.push(
         <CalendarDay
           key={`current-${day}`}
           day={day}
           isCurrentMonth={true}
+          isCurrentDay={isCurrentDay}
           hasBirthday={hasBirthdayOnDate(day, currentMonth)}
           onClick={() => {
             setSelectedDate(new Date(currentDate.getFullYear(), currentMonth, day));
@@ -173,6 +192,7 @@ export const BirthdayCalendar = () => {
           key={`next-${day}`}
           day={day}
           isCurrentMonth={false}
+          isCurrentDay={false}
           hasBirthday={hasBirthdayOnDate(day, currentMonth + 1)}
           onClick={() => {}}
         />
