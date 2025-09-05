@@ -23,9 +23,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanupInvalidTokens = void 0;
+exports.sendBirthdayNotification = exports.cleanupInvalidTokens = void 0;
 const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
+const functions_1 = require("firebase/functions");
 admin.initializeApp();
 exports.cleanupInvalidTokens = functions.https.onCall(async (data, context) => {
     if (!context.auth) {
@@ -54,4 +55,19 @@ exports.cleanupInvalidTokens = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError('internal', 'Error cleaning up token');
     }
 });
+var notifications_1 = require("./notifications");
+Object.defineProperty(exports, "sendBirthdayNotification", { enumerable: true, get: function () { return notifications_1.sendBirthdayNotification; } });
+// Example of sending a notification
+const sendNotification = (0, functions_1.httpsCallable)((0, functions_1.getFunctions)(), 'sendBirthdayNotification');
+(async () => {
+    await sendNotification({
+        userId: 'target-user-id',
+        title: 'Birthday Reminder!',
+        body: 'It\'s John\'s birthday today!',
+        data: {
+            type: 'birthday',
+            personId: 'john-123'
+        }
+    });
+})();
 //# sourceMappingURL=index.js.map
