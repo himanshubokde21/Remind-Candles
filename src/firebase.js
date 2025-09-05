@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getMessaging, getToken } from 'firebase/messaging';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -8,7 +8,6 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);
@@ -32,9 +31,23 @@ export const requestForToken = async () => {
   }
 };
 
-export const onMessageListener = () =>
-  new Promise((resolve) => {
-    onMessage(messaging, (payload) => {
-      resolve(payload);
-    });
-  });
+export const requestPermission = async () => {
+  console.log('Requesting notification permission...');
+  const permission = await Notification.requestPermission();
+
+  if (permission === 'granted') {
+    console.log('Notification permission granted.');
+
+    try {
+      const token = await getToken(messaging, {
+        vapidKey: 'BGm4Jv6zdCPzuyn9gbjRRFp-r7d9AubNkXhBsafhDXh7TRMefIILQzhneX0IaTjiTcZVT_vTOwnD367sZTY2naQ', // VAPID key
+      });
+      console.log('Your FCM Token:', token);
+      alert('Your FCM Token:\n' + token); // quick copy method
+    } catch (error) {
+      console.error('Error getting FCM token:', error);
+    }
+  } else {
+    console.log('Notification permission denied.');
+  }
+};
