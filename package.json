@@ -1,7 +1,7 @@
 {
   "name": "remined-candles",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -43,5 +43,23 @@
     "vite": "^7.1.2",
     "vite-plugin-pwa": "^1.0.3",
     "workbox-window": "^7.3.0"
-  }
+  },
+  "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
+  "main": "index.html",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/himanshubokde21/Remind-Candles.git"
+  },
+  "keywords": [
+    "reminder",
+    "birthdays",
+    "firebase",
+    "notifications"
+  ],
+  "author": "Himanshu Bokde",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/himanshubokde21/Remind-Candles/issues"
+  },
+  "homepage": "https://github.com/himanshubokde21/Remind-Candles#readme"
 }
