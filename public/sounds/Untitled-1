@@ -1,0 +1,2 @@
+const softChime = new Audio("/sounds/soft-chime.mp3");
+const loudAlert = new Audio("/sounds/loud-alert.mp3");
