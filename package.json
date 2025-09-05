@@ -17,7 +17,11 @@
     "@mui/lab": "^7.0.0-beta.17",
     "@mui/material": "^7.3.2",
     "@mui/x-date-pickers": "^8.11.0",
+    "@types/serviceworker": "^0.0.152",
     "date-fns": "^4.1.0",
+    "firebase": "^12.2.1",
+    "firebase-admin": "^13.5.0",
+    "firebase-functions": "^6.4.0",
     "formik": "^2.4.6",
     "framer-motion": "^12.23.12",
     "react": "^19.1.1",
@@ -36,6 +40,8 @@
     "globals": "^16.3.0",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
-    "vite": "^7.1.2"
+    "vite": "^7.1.2",
+    "vite-plugin-pwa": "^1.0.3",
+    "workbox-window": "^7.3.0"
   }
 }

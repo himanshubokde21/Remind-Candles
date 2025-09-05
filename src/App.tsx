@@ -10,6 +10,9 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { AnimatedRoutes } from './components/AnimatedRoutes';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import { useEffect } from 'react';
+import FirebaseService from './services/FirebaseService';
+import { AuthProvider } from './contexts/AuthContext';
 
 const AppContent = () => {
   const DRAWER_WIDTH = 240;
@@ -44,10 +47,17 @@ const AppContent = () => {
 };
 
 function App() {
+  useEffect(() => {
+    // Initialize Firebase when the app starts
+    FirebaseService.getInstance();
+  }, []);
+
   return (
-    <ThemeProvider>
-      <AppThemedContent />
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <AppThemedContent />
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
 
