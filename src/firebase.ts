@@ -64,4 +64,8 @@ class MessagingService {
   }
 }
 
+export const requestForToken = async () => {
+  // ...existing code...
+};
+
 export default MessagingService;

@@ -12,7 +12,9 @@ import { AnimatedRoutes } from './components/AnimatedRoutes';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { useEffect } from 'react';
 import FirebaseService from './services/FirebaseService';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { requestForToken } from './firebase';
+import TokenService from './services/TokenService';
 
 const AppContent = () => {
   const DRAWER_WIDTH = 240;
@@ -47,36 +49,82 @@ const AppContent = () => {
 };
 
 function App() {
+  const { user } = useAuth();
+
   useEffect(() => {
     // Initialize Firebase when the app starts
     FirebaseService.getInstance();
   }, []);
 
+  useEffect(() => {
+    const initializeNotifications = async () => {
+      try {
+        // Only request token if user is authenticated
+        if (user) {
+          const token = await requestForToken();
+          if (typeof token === 'string' && token) {
+            // Store token in Firestore under user's document
+            await TokenService.getInstance().saveToken(user.uid, token);
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing notifications:', error);
+      }
+    };
+    
+    initializeNotifications();
+  }, [user]); // Re-run when user auth state changes
+  
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <AppThemedContent />
-      </ThemeProvider>
-    </AuthProvider>
+    <Router>
+      <AuthProvider>
+        <ThemeProvider>
+          <AppThemedContent />
+        </ThemeProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 
 function AppThemedContent() {
   const { currentTheme } = useTheme();
+  const { user } = useAuth();
 
+  useEffect(() => {
+    // Initialize Firebase when the app starts
+    FirebaseService.getInstance();
+  }, []);
+
+  useEffect(() => {
+    const initializeNotifications = async () => {
+      try {
+        // Only request token if user is authenticated
+        if (user) {
+          const token = await requestForToken();
+          if (typeof token === 'string' && token) {
+            // Store token in Firestore under user's document
+            await TokenService.getInstance().saveToken(user.uid, token);
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing notifications:', error);
+      }
+    };
+    
+    initializeNotifications();
+  }, [user]); // Re-run when user auth state changes
+  
   return (
     <MuiThemeProvider theme={currentTheme}>
-      <Router>
-        <NotificationProvider>
-          <BirthdayProvider>
-            <WishingProvider>
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <AppContent />
-              </LocalizationProvider>
-            </WishingProvider>
-          </BirthdayProvider>
-        </NotificationProvider>
-      </Router>
+      <NotificationProvider>
+        <BirthdayProvider>
+          <WishingProvider>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <AppContent />
+            </LocalizationProvider>
+          </WishingProvider>
+        </BirthdayProvider>
+      </NotificationProvider>
     </MuiThemeProvider>
   );
 }

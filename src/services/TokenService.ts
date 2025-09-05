@@ -33,13 +33,9 @@ class TokenService {
     return TokenService.instance;
   }
 
-  public async saveToken(userId: string, fcmToken: string): Promise<void> {
-    if (!userId || !fcmToken) {
-      throw new Error('userId and fcmToken are required');
-    }
-
-    const tokenDoc: TokenDocument = {
-      token: fcmToken,
+  public async saveToken(userId: string, token: string): Promise<void> {
+    const tokenData: TokenDocument = {
+      token,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
       deviceInfo: {
@@ -50,8 +46,8 @@ class TokenService {
       isActive: true
     };
 
-    const tokenRef = doc(this.db, 'users', userId, 'tokens', fcmToken);
-    await setDoc(tokenRef, tokenDoc);
+    const tokenRef = doc(this.db, 'users', userId, 'tokens', token);
+    await setDoc(tokenRef, tokenData);
   }
 
   public async deactivateToken(userId: string, fcmToken: string): Promise<void> {
