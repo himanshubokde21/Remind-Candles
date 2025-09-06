@@ -1,13 +1,13 @@
-importScripts("https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js");
-importScripts("https://www.gstatic.com/firebasejs/9.6.11/firebase-messaging.js");
+importScripts("https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/9.6.11/firebase-messaging-compat.js");
 
 firebase.initializeApp({
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: "AIzaSyBR0JX9p8q_0eCNFNIu3dhx6lsKancFjXI",
+  authDomain: "remind-candles.firebaseapp.com",
+  projectId: "remind-candles",
+  storageBucket: "remind-candles.appspot.com",
+  messagingSenderId: "860899862354",
+  appId: "1:860899862354:web:6180680aa8f3acc907bc8b",
 });
 
 const messaging = firebase.messaging();
@@ -17,7 +17,7 @@ messaging.onBackgroundMessage(function (payload) {
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
-    icon: "/notify-cake.png", // your image
+    icon: "/assets/notify-cake.png" , // your image
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);

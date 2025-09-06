@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { requestPermission } from "./firebase"; // Adjust path if needed
+import { requestPermission, functions } from "./firebase";  // Adjust path if needed
 
 function App() {
   useEffect(() => {

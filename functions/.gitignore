@@ -1,2 +1,3 @@
 node_modules/
 *.local
+/functions/remind-candles-firebase-adminsdk-fbsvc-52abf7030f.json

@@ -1,6 +1,6 @@
 import * as functions from 'firebase-functions/v1';
 import * as admin from 'firebase-admin';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { sendBirthdayNotification } from './notifications';
 
 interface TokenCleanupData {
   token: string;
@@ -10,6 +10,7 @@ interface TokenCleanupData {
 
 admin.initializeApp();
 
+// Callable function to clean up invalid tokens
 export const cleanupInvalidTokens = functions.https.onCall(
   async (data: TokenCleanupData, context: functions.https.CallableContext) => {
     if (!context.auth) {
@@ -29,7 +30,8 @@ export const cleanupInvalidTokens = functions.https.onCall(
     }
 
     try {
-      const tokenRef = admin.firestore()
+      const tokenRef = admin
+        .firestore()
         .collection('users')
         .doc(userId)
         .collection('tokens')
@@ -40,7 +42,7 @@ export const cleanupInvalidTokens = functions.https.onCall(
       functions.logger.info(`Cleaned up invalid token for user ${userId}`, {
         token,
         error,
-        userId
+        userId,
       });
 
       return { success: true };
@@ -51,18 +53,5 @@ export const cleanupInvalidTokens = functions.https.onCall(
   }
 );
 
-export { sendBirthdayNotification } from './notifications';
-
-// Example of sending a notification
-const sendNotification = httpsCallable(getFunctions(), 'sendBirthdayNotification');
-(async () => {
-  await sendNotification({
-    userId: 'target-user-id',
-    title: 'Birthday Reminder!',
-    body: 'It\'s John\'s birthday today!',
-    data: {
-      type: 'birthday',
-      personId: 'john-123'
-    }
-  });
-})();
+// Export your notification function (implemented in ./notifications.ts)
+export { sendBirthdayNotification };

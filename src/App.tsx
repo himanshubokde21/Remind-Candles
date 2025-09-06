@@ -13,43 +13,36 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { useEffect } from 'react';
 import FirebaseService from './services/FirebaseService';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { requestForToken } from './firebase';
+import { getOrRequestPermissionAndToken, requestForToken } from './firebase'; // Correct import
 import TokenService from './services/TokenService';
-import { getMessaging, getToken } from "firebase/messaging";
 
 const softChime = new Audio("/sounds/soft-chime.mp3");
 const loudAlert = new Audio("/sounds/loud-alert.mp3");
 
-const messaging = getMessaging();
-
-export const requestPermission = async () => {
-  console.log("Requesting permission...");
-  const permission = await Notification.requestPermission();
-
-  if (permission === "granted") {
-    console.log("Notification permission granted.");
-    
-    try {
-      // Get FCM token using the VAPID key from the .env file
-      const token = await getToken(messaging, {
-        vapidKey: process.env.VITE_FIREBASE_VAPID_KEY, // Access VAPID key from .env
-      });
-      console.log("FCM Token:", token);
-
-      // TODO: Save this token to Firestore under the logged-in user
-      softChime.play(); // Play soft chime on success
-    } catch (error) {
-      console.error("Error getting FCM token:", error);
-      loudAlert.play(); // Play loud alert on error
-    }
-  } else {
-    console.log("Notification permission denied.");
-    loudAlert.play(); // Play loud alert if permission is denied
-  }
-};
-
 const AppContent = () => {
   const DRAWER_WIDTH = 240;
+  const { user } = useAuth();
+
+  const handleEnableNotifications = async () => {
+    if (!user) {
+      console.log("User must be logged in to enable notifications.");
+      alert("Please log in to enable notifications.");
+      return;
+    }
+    
+    try {
+      const token = await getOrRequestPermissionAndToken();
+      if (token) {
+        await TokenService.getInstance().saveToken(user.uid, token);
+        console.log("Notification token saved successfully.");
+        softChime.play();
+        alert("Notifications have been enabled!");
+      }
+    } catch (error) {
+      console.error("Error enabling notifications:", error);
+      loudAlert.play();
+    }
+  };
   
   return (
     <>
@@ -63,7 +56,7 @@ const AppContent = () => {
             p: { xs: 2, sm: 3 },
             width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
             ml: { sm: `${DRAWER_WIDTH}px` },
-            mt: '64px', // Height of AppBar
+            mt: '64px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -73,11 +66,10 @@ const AppContent = () => {
           <Box sx={{ width: '100%', maxWidth: '1200px', mx: 'auto' }}>
             <AnimatedRoutes />
           </Box>
-          {/* Add a button to request notification permission */}
           <Button
             variant="contained"
             color="primary"
-            onClick={requestPermission}
+            onClick={handleEnableNotifications}
             sx={{ mt: 2 }}
           >
             Enable Notifications
@@ -90,34 +82,6 @@ const AppContent = () => {
 };
 
 function App() {
-  const { user } = useAuth();
-
-  useEffect(() => {
-    // Initialize Firebase when the app starts
-    FirebaseService.getInstance();
-  }, []);
-
-  useEffect(() => {
-    const initializeNotifications = async () => {
-      try {
-        // Only request token if user is authenticated
-        if (user) {
-          const token = await requestForToken();
-          if (typeof token === 'string' && token) {
-            // Store token in Firestore under user's document
-            await TokenService.getInstance().saveToken(user.uid, token);
-            softChime.play(); // Play soft chime when token is successfully saved
-          }
-        }
-      } catch (error) {
-        console.error('Error initializing notifications:', error);
-        loudAlert.play(); // Play loud alert if an error occurs
-      }
-    };
-    
-    initializeNotifications();
-  }, [user]); // Re-run when user auth state changes
-  
   return (
     <Router>
       <AuthProvider>
@@ -134,30 +98,26 @@ function AppThemedContent() {
   const { user } = useAuth();
 
   useEffect(() => {
-    // Initialize Firebase when the app starts
     FirebaseService.getInstance();
   }, []);
 
   useEffect(() => {
     const initializeNotifications = async () => {
-      try {
-        // Only request token if user is authenticated
-        if (user) {
+      if (user && Notification.permission === 'granted') {
+        try {
           const token = await requestForToken();
           if (typeof token === 'string' && token) {
-            // Store token in Firestore under user's document
             await TokenService.getInstance().saveToken(user.uid, token);
-            softChime.play(); // Play soft chime when token is successfully saved
+            console.log("Existing notification token refreshed and saved.");
           }
+        } catch (error) {
+          console.error('Error refreshing notification token:', error);
         }
-      } catch (error) {
-        console.error('Error initializing notifications:', error);
-        loudAlert.play(); // Play loud alert if an error occurs
       }
     };
     
     initializeNotifications();
-  }, [user]); // Re-run when user auth state changes
+  }, [user]);
   
   return (
     <MuiThemeProvider theme={currentTheme}>

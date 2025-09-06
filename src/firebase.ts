@@ -21,11 +21,10 @@ class MessagingService {
   private setupForegroundListener() {
     onMessage(this.messaging, (payload) => {
       console.log('Message received in foreground:', payload);
-      // Show notification using the Notification API
       if (payload.notification) {
         new Notification(payload.notification.title || 'Birthday Reminder', {
           body: payload.notification.body,
-          icon: '/icons/icon-192x192.png'
+          icon: '/icons/icon-192x192.png',
         });
       }
     });
@@ -42,19 +41,19 @@ class MessagingService {
       const registration = await navigator.serviceWorker.ready;
       const token = await getToken(this.messaging, {
         vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
-        serviceWorkerRegistration: registration
+        serviceWorkerRegistration: registration,
       });
 
       if (token) {
         this.token = token;
-        console.log('FCM Token:', token);
+        console.log('✅ FCM Token:', token);
         return true;
       }
 
-      console.log('No registration token available');
+      console.log('⚠️ No registration token available');
       return false;
     } catch (error) {
-      console.error('Error getting messaging token:', error);
+      console.error('❌ Error getting messaging token:', error);
       return false;
     }
   }
@@ -64,8 +63,27 @@ class MessagingService {
   }
 }
 
-export const requestForToken = async () => {
-  // ...existing code...
+// ✅ Just refresh / get token if already granted
+export const requestForToken = async (): Promise<string | null> => {
+  const messagingService = MessagingService.getInstance();
+  const initialized = await messagingService.initMessaging();
+  return initialized ? messagingService.getToken() : null;
+};
+
+// ✅ Ask permission, then get token
+export const getOrRequestPermissionAndToken = async (): Promise<string | null> => {
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      return await requestForToken();
+    } else {
+      console.log('Notification permission denied.');
+      return null;
+    }
+  } catch (error) {
+    console.error('Error requesting permission and token:', error);
+    return null;
+  }
 };
 
 export default MessagingService;
