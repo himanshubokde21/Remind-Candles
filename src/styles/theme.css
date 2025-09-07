@@ -1,0 +1,7 @@
+:root {
+  --primary-color: #FFD700; /* Golden */
+  --primary-color-glow: rgba(255, 215, 0, 0.8); /* Glowing effect */
+  --secondary-color: #FFF8DC; /* Light golden background */
+  --text-color: #000000; /* Black for contrast */
+  --button-hover: #FFC107; /* Slightly darker golden for hover */
+}

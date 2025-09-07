@@ -1,5 +1,6 @@
 import * as admin from 'firebase-admin';
-import * as functions from 'firebase-functions/v1';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { logger } from 'firebase-functions';
 
 interface NotificationPayload {
   userId: string;
@@ -40,16 +41,15 @@ interface NotificationMessage {
   };
 }
 
-export const sendBirthdayNotification = functions.https.onCall(
-  async (data: NotificationPayload, context: functions.https.CallableContext) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError(
-        'unauthenticated',
-        'Must be authenticated to send notifications'
-      );
-    }
+export const sendBirthdayNotification = onCall<NotificationPayload>(
+  { region: 'us-central1' },
+  async (request): Promise<{ success: boolean; sentCount: number; failureCount: number }> => {
+    const context = request.auth;
+    const { userId, title, body, data: customData } = request.data;
 
-    const { userId, title, body, data: customData } = data;
+    if (!context) {
+      throw new HttpsError('unauthenticated', 'Must be authenticated to send notifications');
+    }
 
     try {
       const tokensSnapshot = await admin
@@ -61,80 +61,68 @@ export const sendBirthdayNotification = functions.https.onCall(
         .get();
 
       if (tokensSnapshot.empty) {
-        throw new functions.https.HttpsError(
-          'failed-precondition',
-          'No active notification tokens found for user'
-        );
+        throw new HttpsError('failed-precondition', 'No active notification tokens found for user');
       }
 
       const message: NotificationMessage = {
-        notification: {
-          title,
-          body,
-        },
+        notification: { title, body },
         data: customData || {},
         android: {
           notification: {
             icon: '@drawable/ic_notification',
-            color: '#FFB5E8'
-          }
+            color: '#FFD700',
+          },
         },
         apns: {
-          payload: {
-            aps: {
-              sound: 'default'
-            }
-          }
+          payload: { aps: { sound: 'default' } },
         },
         webpush: {
           notification: {
-            icon: '/icons/icon-192x192.png',
-            badge: '/icons/icon-72x72.png'
-          }
-        }
+            icon: '/icons/golden-icon-192x192.png',
+            badge: '/icons/golden-badge-72x72.png',
+          },
+        },
       };
 
-      const tokens = tokensSnapshot.docs.map(doc => doc.data().token);
+      const tokens = tokensSnapshot.docs
+        .map((doc) => doc.data().token)
+        .filter((token): token is string => Boolean(token));
+
       const response = await admin.messaging().sendMulticast({
         ...message,
-        tokens
+        tokens,
       });
 
       if (response.failureCount > 0) {
         const failedTokens: FailedToken[] = [];
         response.responses.forEach((resp, idx) => {
           if (!resp.success && resp.error) {
-            failedTokens.push({
-              token: tokens[idx],
-              error: resp.error as unknown as Error
-            });
+            failedTokens.push({ token: tokens[idx], error: resp.error as unknown as Error });
           }
         });
 
-        await Promise.all(
-          failedTokens.map(({ token }) =>
-            admin
-              .firestore()
+        if (failedTokens.length) {
+          const batch = admin.firestore().batch();
+          failedTokens.forEach(({ token }) => {
+            const ref = admin.firestore()
               .collection('users')
               .doc(userId)
               .collection('tokens')
-              .doc(token)
-              .delete()
-          )
-        );
+              .doc(token);
+            batch.delete(ref);
+          });
+          await batch.commit();
+        }
       }
 
       return {
         success: true,
         sentCount: response.successCount,
-        failureCount: response.failureCount
+        failureCount: response.failureCount,
       };
     } catch (error) {
-      functions.logger.error('Error sending notification:', error);
-      throw new functions.https.HttpsError(
-        'internal',
-        'Error sending notification'
-      );
+      logger.error('❌ Error sending notification:', error);
+      throw new HttpsError('internal', 'Error sending notification');
     }
   }
 );

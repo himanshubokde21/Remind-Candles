@@ -24,19 +24,22 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendBirthdayNotification = exports.cleanupInvalidTokens = void 0;
-const functions = __importStar(require("firebase-functions/v1"));
+const https_1 = require("firebase-functions/v2/https");
+const logger = __importStar(require("firebase-functions/logger"));
 const admin = __importStar(require("firebase-admin"));
 const notifications_1 = require("./notifications");
 Object.defineProperty(exports, "sendBirthdayNotification", { enumerable: true, get: function () { return notifications_1.sendBirthdayNotification; } });
 admin.initializeApp();
-// Callable function to clean up invalid tokens
-exports.cleanupInvalidTokens = functions.https.onCall(async (data, context) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Must be authenticated to cleanup tokens');
+// Gen 2 callable function
+exports.cleanupInvalidTokens = (0, https_1.onCall)({ region: 'us-central1' }, async (request) => {
+    const data = request.data;
+    const context = request.auth;
+    if (!context) {
+        throw new https_1.HttpsError('unauthenticated', 'Must be authenticated to cleanup tokens');
     }
     const { token, userId, error } = data;
     if (!token || !userId || !error) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing required parameters');
+        throw new https_1.HttpsError('invalid-argument', 'Missing required parameters');
     }
     try {
         const tokenRef = admin
@@ -46,7 +49,7 @@ exports.cleanupInvalidTokens = functions.https.onCall(async (data, context) => {
             .collection('tokens')
             .doc(token);
         await tokenRef.delete();
-        functions.logger.info(`Cleaned up invalid token for user ${userId}`, {
+        logger.info(`✅ Cleaned up invalid token for user ${userId}`, {
             token,
             error,
             userId,
@@ -54,8 +57,8 @@ exports.cleanupInvalidTokens = functions.https.onCall(async (data, context) => {
         return { success: true };
     }
     catch (cleanupError) {
-        functions.logger.error('Error cleaning up token:', cleanupError);
-        throw new functions.https.HttpsError('internal', 'Error cleaning up token');
+        logger.error('❌ Error cleaning up token:', cleanupError);
+        throw new https_1.HttpsError('internal', 'Error cleaning up token');
     }
 });
 //# sourceMappingURL=index.js.map

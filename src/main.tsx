@@ -4,7 +4,8 @@ import App from './App';
 import FirebaseService from './services/FirebaseService';
 
 // Initialize Firebase first
-FirebaseService.getInstance();
+const firebase = FirebaseService.getInstance();
+console.log("Firebase initialized:", firebase);
 
 // Register the service worker
 if ("serviceWorker" in navigator) {

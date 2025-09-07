@@ -1,0 +1,14 @@
+.birthday-wishes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1rem;
+}
+
+@media (max-width: 600px) {
+  .birthday-wishes {
+    font-size: 14px; /* Adjust font size for small screens */
+    line-height: 1.5; /* Increase line height to prevent overlap */
+  }
+}

@@ -25,12 +25,14 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendBirthdayNotification = void 0;
 const admin = __importStar(require("firebase-admin"));
-const functions = __importStar(require("firebase-functions/v1"));
-exports.sendBirthdayNotification = functions.https.onCall(async (data, context) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Must be authenticated to send notifications');
+const https_1 = require("firebase-functions/v2/https");
+const firebase_functions_1 = require("firebase-functions");
+exports.sendBirthdayNotification = (0, https_1.onCall)({ region: 'us-central1' }, async (request) => {
+    const context = request.auth;
+    const { userId, title, body, data: customData } = request.data;
+    if (!context) {
+        throw new https_1.HttpsError('unauthenticated', 'Must be authenticated to send notifications');
     }
-    const { userId, title, body, data: customData } = data;
     try {
         const tokensSnapshot = await admin
             .firestore()
@@ -40,63 +42,60 @@ exports.sendBirthdayNotification = functions.https.onCall(async (data, context) 
             .where('isActive', '==', true)
             .get();
         if (tokensSnapshot.empty) {
-            throw new functions.https.HttpsError('failed-precondition', 'No active notification tokens found for user');
+            throw new https_1.HttpsError('failed-precondition', 'No active notification tokens found for user');
         }
         const message = {
-            notification: {
-                title,
-                body,
-            },
+            notification: { title, body },
             data: customData || {},
             android: {
                 notification: {
                     icon: '@drawable/ic_notification',
-                    color: '#FFB5E8'
-                }
+                    color: '#FFD700',
+                },
             },
             apns: {
-                payload: {
-                    aps: {
-                        sound: 'default'
-                    }
-                }
+                payload: { aps: { sound: 'default' } },
             },
             webpush: {
                 notification: {
-                    icon: '/icons/icon-192x192.png',
-                    badge: '/icons/icon-72x72.png'
-                }
-            }
+                    icon: '/icons/golden-icon-192x192.png',
+                    badge: '/icons/golden-badge-72x72.png',
+                },
+            },
         };
-        const tokens = tokensSnapshot.docs.map(doc => doc.data().token);
+        const tokens = tokensSnapshot.docs
+            .map((doc) => doc.data().token)
+            .filter((token) => Boolean(token));
         const response = await admin.messaging().sendMulticast(Object.assign(Object.assign({}, message), { tokens }));
         if (response.failureCount > 0) {
             const failedTokens = [];
             response.responses.forEach((resp, idx) => {
                 if (!resp.success && resp.error) {
-                    failedTokens.push({
-                        token: tokens[idx],
-                        error: resp.error
-                    });
+                    failedTokens.push({ token: tokens[idx], error: resp.error });
                 }
             });
-            await Promise.all(failedTokens.map(({ token }) => admin
-                .firestore()
-                .collection('users')
-                .doc(userId)
-                .collection('tokens')
-                .doc(token)
-                .delete()));
+            if (failedTokens.length) {
+                const batch = admin.firestore().batch();
+                failedTokens.forEach(({ token }) => {
+                    const ref = admin.firestore()
+                        .collection('users')
+                        .doc(userId)
+                        .collection('tokens')
+                        .doc(token);
+                    batch.delete(ref);
+                });
+                await batch.commit();
+            }
         }
         return {
             success: true,
             sentCount: response.successCount,
-            failureCount: response.failureCount
+            failureCount: response.failureCount,
         };
     }
     catch (error) {
-        functions.logger.error('Error sending notification:', error);
-        throw new functions.https.HttpsError('internal', 'Error sending notification');
+        firebase_functions_1.logger.error('❌ Error sending notification:', error);
+        throw new https_1.HttpsError('internal', 'Error sending notification');
     }
 });
 //# sourceMappingURL=notifications.js.map
