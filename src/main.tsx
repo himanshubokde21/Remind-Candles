@@ -2,6 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import FirebaseService from './services/FirebaseService';
+import "./index.css";
+
 
 // Initialize Firebase first
 const firebase = FirebaseService.getInstance();

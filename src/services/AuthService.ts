@@ -1,20 +1,21 @@
-import { 
-  getAuth, 
-  GoogleAuthProvider, 
-  signInWithPopup, 
-  signOut, 
-  onAuthStateChanged
+// src/services/AuthService.ts
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  type User,
 } from "firebase/auth";
-import type { User } from "firebase/auth";
-import FirebaseService from "./FirebaseService";
+import app from "../firebase"; // ✅ import your initialized firebase app
 
 class AuthService {
   private static instance: AuthService;
-  private auth;
+  private auth = getAuth(app);
 
-  private constructor() {
-    this.auth = getAuth(FirebaseService.getInstance().getApp());
-  }
+  private constructor() {}
 
   public static getInstance(): AuthService {
     if (!AuthService.instance) {
@@ -23,22 +24,29 @@ class AuthService {
     return AuthService.instance;
   }
 
-  public async signInWithGoogle(): Promise<User> {
-    const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(this.auth, provider);
-    return result.user;
-  }
-
-  public async signOut(): Promise<void> {
-    await signOut(this.auth);
-  }
-
-  public getCurrentUser(): User | null {
-    return this.auth.currentUser;
-  }
-
-  public onAuthStateChanged(callback: (user: User | null) => void): () => void {
+  onAuthStateChanged(callback: (user: User | null) => void) {
     return onAuthStateChanged(this.auth, callback);
+  }
+
+  // 🔹 Google Login
+  async signInWithGoogle() {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(this.auth, provider);
+  }
+
+  // 🔹 Email/Password Login
+  async signInWithEmail(email: string, password: string) {
+    await signInWithEmailAndPassword(this.auth, email, password);
+  }
+
+  // 🔹 Email/Password Signup
+  async signUpWithEmail(email: string, password: string) {
+    await createUserWithEmailAndPassword(this.auth, email, password);
+  }
+
+  // 🔹 Logout
+  async signOut() {
+    await signOut(this.auth);
   }
 }
 

@@ -27,65 +27,77 @@ exports.sendBirthdayNotification = void 0;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 const firebase_functions_1 = require("firebase-functions");
-exports.sendBirthdayNotification = (0, https_1.onCall)({ region: 'us-central1' }, async (request) => {
+admin.initializeApp();
+exports.sendBirthdayNotification = (0, https_1.onCall)({ region: "us-central1" }, async (request) => {
     const context = request.auth;
     const { userId, title, body, data: customData } = request.data;
     if (!context) {
-        throw new https_1.HttpsError('unauthenticated', 'Must be authenticated to send notifications');
+        throw new https_1.HttpsError("unauthenticated", "Must be authenticated to send notifications");
     }
     try {
         const tokensSnapshot = await admin
             .firestore()
-            .collection('users')
+            .collection("users")
             .doc(userId)
-            .collection('tokens')
-            .where('isActive', '==', true)
+            .collection("tokens")
+            .where("isActive", "==", true)
             .get();
         if (tokensSnapshot.empty) {
-            throw new https_1.HttpsError('failed-precondition', 'No active notification tokens found for user');
+            throw new https_1.HttpsError("failed-precondition", "No active notification tokens found for user");
         }
+        // Collect tokens
+        const tokens = tokensSnapshot.docs
+            .map((doc) => doc.data().token)
+            .filter((token) => Boolean(token));
+        // Construct message
         const message = {
             notification: { title, body },
             data: customData || {},
             android: {
                 notification: {
-                    icon: '@drawable/ic_notification',
-                    color: '#FFD700',
+                    icon: "@drawable/ic_notification",
+                    color: "#FFD700",
                 },
             },
             apns: {
-                payload: { aps: { sound: 'default' } },
+                payload: { aps: { sound: "default" } },
             },
             webpush: {
                 notification: {
-                    icon: '/icons/golden-icon-192x192.png',
-                    badge: '/icons/golden-badge-72x72.png',
+                    icon: "/icons/golden-icon-192x192.png",
+                    badge: "/icons/golden-badge-72x72.png",
                 },
             },
         };
-        const tokens = tokensSnapshot.docs
-            .map((doc) => doc.data().token)
-            .filter((token) => Boolean(token));
-        const response = await admin.messaging().sendMulticast(Object.assign(Object.assign({}, message), { tokens }));
-        if (response.failureCount > 0) {
-            const failedTokens = [];
-            response.responses.forEach((resp, idx) => {
-                if (!resp.success && resp.error) {
-                    failedTokens.push({ token: tokens[idx], error: resp.error });
-                }
-            });
-            if (failedTokens.length) {
-                const batch = admin.firestore().batch();
-                failedTokens.forEach(({ token }) => {
-                    const ref = admin.firestore()
-                        .collection('users')
-                        .doc(userId)
-                        .collection('tokens')
-                        .doc(token);
-                    batch.delete(ref);
-                });
-                await batch.commit();
+        // ✅ Use sendEachForMulticast instead of sendMulticast
+        const response = await admin.messaging().sendEachForMulticast(Object.assign({ tokens }, message));
+        const failedTokens = [];
+        // Handle individual responses
+        response.responses.forEach((resp, idx) => {
+            if (resp.success) {
+                console.log(`✅ Notification sent successfully to token[${idx}]`);
             }
+            else {
+                console.error(`❌ Failed to send notification to token[${idx}]:`, resp.error);
+                failedTokens.push({
+                    token: tokens[idx],
+                    error: resp.error,
+                });
+            }
+        });
+        // Clean up invalid tokens
+        if (failedTokens.length) {
+            const batch = admin.firestore().batch();
+            failedTokens.forEach(({ token }) => {
+                const ref = admin
+                    .firestore()
+                    .collection("users")
+                    .doc(userId)
+                    .collection("tokens")
+                    .doc(token);
+                batch.delete(ref);
+            });
+            await batch.commit();
         }
         return {
             success: true,
@@ -94,8 +106,8 @@ exports.sendBirthdayNotification = (0, https_1.onCall)({ region: 'us-central1' }
         };
     }
     catch (error) {
-        firebase_functions_1.logger.error('❌ Error sending notification:', error);
-        throw new https_1.HttpsError('internal', 'Error sending notification');
+        firebase_functions_1.logger.error("❌ Error sending notification:", error);
+        throw new https_1.HttpsError("internal", "Error sending notification");
     }
 });
 //# sourceMappingURL=notifications.js.map

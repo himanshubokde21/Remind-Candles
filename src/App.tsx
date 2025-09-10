@@ -15,6 +15,10 @@ import FirebaseService from './services/FirebaseService';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { getOrRequestPermissionAndToken, requestForToken } from './firebase'; // Correct import
 import TokenService from './services/TokenService';
+import './styles/BirthdayWishes.css';
+import './styles/glow.css';
+import './styles/theme.css';
+import './styles/components.css';
 
 const softChime = new Audio("/sounds/soft-chime.mp3");
 const loudAlert = new Audio("/sounds/loud-alert.mp3");

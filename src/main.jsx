@@ -1,6 +1,12 @@
+import './styles/BirthdayWishes.css';
+import './styles/glow.css';
+import './styles/theme.css';
+import './styles/components.css';
 import React from "react";
-import ReactDOM from "react-dom";
-import App from "./App";
+import ReactDOM from "react-dom/client";
+import App from "./App.jsx";
+import "./index.css";
+
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
@@ -11,9 +17,8 @@ if ("serviceWorker" in navigator) {
     .catch((err) => console.log("SW registration failed:", err));
 }
 
-ReactDOM.render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>,
-  document.getElementById("root")
+  </React.StrictMode>
 );
