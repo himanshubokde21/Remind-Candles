@@ -13,15 +13,26 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { useEffect } from 'react';
 import FirebaseService from './services/FirebaseService';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { getOrRequestPermissionAndToken, requestForToken } from './firebase'; // Correct import
+import { getOrRequestPermissionAndToken, requestForToken } from './firebase';
 import TokenService from './services/TokenService';
 import './styles/BirthdayWishes.css';
 import './styles/glow.css';
 import './styles/theme.css';
 import './styles/components.css';
 
-const softChime = new Audio("/sounds/soft-chime.mp3");
-const loudAlert = new Audio("/sounds/loud-alert.mp3");
+// Safely create Audio objects
+const createAudio = (path: string) => {
+  try {
+    const audio = new Audio(path);
+    return audio;
+  } catch (error) {
+    console.error(`Error loading audio file: ${path}`, error);
+    return { play: () => {} } as HTMLAudioElement; // fallback no-op
+  }
+};
+
+const softChime = createAudio("/sounds/soft-chime.mp3");
+const loudAlert = createAudio("/sounds/loud-alert.mp3");
 
 const AppContent = () => {
   const DRAWER_WIDTH = 240;
@@ -39,12 +50,12 @@ const AppContent = () => {
       if (token) {
         await TokenService.getInstance().saveToken(user.uid, token);
         console.log("Notification token saved successfully.");
-        softChime.play();
+        softChime.play().catch(err => console.warn("Soft chime failed:", err));
         alert("Notifications have been enabled!");
       }
     } catch (error) {
       console.error("Error enabling notifications:", error);
-      loudAlert.play();
+      loudAlert.play().catch(err => console.warn("Loud alert failed:", err));
     }
   };
   

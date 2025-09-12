@@ -1,40 +1,67 @@
-import { Button, Box, Typography } from '@mui/material';
-import { Google as GoogleIcon } from '@mui/icons-material';
-import { useAuth } from '../contexts/AuthContext';
+import { Box, Button, Typography, CircularProgress } from "@mui/material";
+import { Google as GoogleIcon } from "@mui/icons-material";
+import { useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
 
 export function Login() {
-  const { signIn } = useAuth();
+  const { user, signIn, signOutUser } = useAuth();
+  const [loading, setLoading] = useState(false);
 
   const handleSignIn = async () => {
+    setLoading(true);
     try {
       await signIn();
+      alert(`Welcome, ${user?.displayName || "User"}!`);
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
+      alert("Failed to sign in. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOutUser();
+      alert("Logged out successfully.");
+    } catch (error) {
+      console.error("Sign out error:", error);
+      alert("Failed to sign out.");
     }
   };
 
   return (
     <Box
       sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        gap: 2
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "60vh",
+        gap: 2,
       }}
     >
-      <Typography variant="h4" gutterBottom>
-        Welcome to Remind Candles
-      </Typography>
-      <Button
-        variant="contained"
-        startIcon={<GoogleIcon />}
-        onClick={handleSignIn}
-        sx={{ mt: 2 }}
-      >
-        Sign in with Google
-      </Button>
+      {user ? (
+        <>
+          <Typography variant="h5">Welcome, {user.displayName}</Typography>
+          <Button variant="contained" color="secondary" onClick={handleSignOut}>
+            Sign Out
+          </Button>
+        </>
+      ) : (
+        <>
+          <Typography variant="h5">Sign in to continue</Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<GoogleIcon />}
+            onClick={handleSignIn}
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={24} color="inherit" /> : "Sign in with Google"}
+          </Button>
+        </>
+      )}
     </Box>
   );
-}
+} 

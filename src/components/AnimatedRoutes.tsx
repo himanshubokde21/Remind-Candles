@@ -11,6 +11,9 @@ import { Container } from '@mui/material';
 export const AnimatedRoutes = () => {
   const location = useLocation();
 
+  // Debugging log
+  console.log("🔎 Current path:", location.pathname);
+
   return (
     <Container 
       maxWidth="lg" 
@@ -44,6 +47,13 @@ export const AnimatedRoutes = () => {
           <Route path="/about" element={
             <PageTransition>
               <AboutPage />
+            </PageTransition>
+          } />
+
+          {/* ✅ Fallback route */}
+          <Route path="*" element={
+            <PageTransition>
+              <HomePage />
             </PageTransition>
           } />
         </Routes>

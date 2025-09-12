@@ -73,11 +73,15 @@ export const getOrRequestPermissionAndToken = async (): Promise<string | null> =
 // Foreground messages
 onMessage(messaging, (payload) => {
   console.log("📩 Message received in foreground:", payload);
-  if (payload.notification) {
-    new Notification(payload.notification.title || "Notification", {
-      body: payload.notification.body,
-      icon: "/icons/icon-192x192.png",
-    });
+  try {
+    if (payload.notification) {
+      new Notification(payload.notification.title || "Notification", {
+        body: payload.notification.body,
+        icon: "/icons/icon-192x192.png",
+      });
+    }
+  } catch (err) {
+    console.warn("Notification error:", err);
   }
 });
 

@@ -4,7 +4,7 @@ import Home from "./components/Home";
 import BirthdayList from "./components/BirthdayList";
 import Settings from "./components/Settings";
 import ErrorBoundary from "./ErrorBoundary";
-import Login from "./components/Login"; // Import Login component
+import { Login } from "./components/Login"; // Import Login component
 
 function App() {
   const [section, setSection] = useState("home");

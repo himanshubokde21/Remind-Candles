@@ -71,22 +71,20 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-// Handle notification clicks
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
+// Fetch event - only handle GET requests in production
+self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
 
-  const urlToOpen = new URL("/", self.location.origin).href;
+  const url = new URL(event.request.url);
 
-  event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
-      for (const client of windowClients) {
-        if (client.url === urlToOpen && "focus" in client) {
-          return client.focus();
-        }
-      }
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
+  // ❌ Skip local dev server requests (Vite, localhost, 127.0.0.1)
+  if (url.origin.includes("127.0.0.1") || url.origin.includes("localhost")) {
+    return;
+  }
+
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
     })
   );
 });
