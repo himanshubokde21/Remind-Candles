@@ -46,7 +46,7 @@ class MessagingService {
           error: error.message,
         });
 
-        this.currentToken = null; // Cleanup locally
+        this.currentToken = null; 
       } catch (cleanupError) {
         console.error("Error cleaning up invalid token:", cleanupError);
       }
