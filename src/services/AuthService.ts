@@ -9,7 +9,7 @@ import {
   signOut,
   type User,
 } from "firebase/auth";
-import app from "../firebase"; // ✅ import your initialized firebase app
+import app from "../firebase"; // ✅ your initialized firebase app
 
 class AuthService {
   private static instance: AuthService;
@@ -24,6 +24,12 @@ class AuthService {
     return AuthService.instance;
   }
 
+  // ✅ Fix: Add this so MessagingService can use it
+  public getCurrentUser(): User | null {
+    return this.auth.currentUser;
+  }
+
+  // 🔹 Subscribe to auth changes
   onAuthStateChanged(callback: (user: User | null) => void) {
     return onAuthStateChanged(this.auth, callback);
   }
