@@ -1,151 +1,73 @@
-import { Box, CssBaseline, Button } from '@mui/material';
-import { BrowserRouter as Router } from 'react-router-dom';
-import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
-import { Footer } from './components/Footer';
-import { Navigation } from './components/Navigation';
-import { NotificationProvider } from './contexts/NotificationContext';
-import { BirthdayProvider } from './contexts/BirthdayContext';
-import { WishingProvider } from './contexts/WishingContext';
-import { LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { AnimatedRoutes } from './components/AnimatedRoutes';
-import { ThemeProvider, useTheme } from './contexts/ThemeContext';
-import { useEffect } from 'react';
-import FirebaseService from './services/FirebaseService';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { getOrRequestPermissionAndToken, requestForToken } from './firebase';
-import TokenService from './services/TokenService';
-import './styles/BirthdayWishes.css';
-import './styles/glow.css';
-import './styles/theme.css';
-import './styles/components.css';
+// src/App.tsx
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Box, Typography, Button, CssBaseline, AppBar, Toolbar } from "@mui/material";
+import { ThemeProvider as MuiThemeProvider, createTheme } from "@mui/material/styles";
 
-// Safely create Audio objects
-const createAudio = (path: string) => {
-  try {
-    const audio = new Audio(path);
-    return audio;
-  } catch (error) {
-    console.error(`Error loading audio file: ${path}`, error);
-    return { play: () => {} } as HTMLAudioElement; // fallback no-op
-  }
-};
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { Login } from "./components/Login";
+import SignUp from "./components/SignUp";
 
-const softChime = createAudio("/sounds/soft-chime.mp3");
-const loudAlert = createAudio("/sounds/loud-alert.mp3");
+const theme = createTheme();
 
-const AppContent = () => {
-  const DRAWER_WIDTH = 240;
-  const { user } = useAuth();
-
-  const handleEnableNotifications = async () => {
-    if (!user) {
-      console.log("User must be logged in to enable notifications.");
-      alert("Please log in to enable notifications.");
-      return;
-    }
-    
-    try {
-      const token = await getOrRequestPermissionAndToken();
-      if (token) {
-        await TokenService.getInstance().saveToken(user.uid, token);
-        console.log("Notification token saved successfully.");
-        softChime.play().catch(err => console.warn("Soft chime failed:", err));
-        alert("Notifications have been enabled!");
-      }
-    } catch (error) {
-      console.error("Error enabling notifications:", error);
-      loudAlert.play().catch(err => console.warn("Loud alert failed:", err));
-    }
-  };
-  
+const Navigation = () => {
+  const { user, signOutUser, signIn } = useAuth();
   return (
-    <>
-      <CssBaseline />
-      <Box sx={{ display: 'flex' }}>
-        <Navigation />
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            p: { xs: 2, sm: 3 },
-            width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
-            ml: { sm: `${DRAWER_WIDTH}px` },
-            mt: '64px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            minHeight: 'calc(100vh - 64px)',
-          }}
-        >
-          <Box sx={{ width: '100%', maxWidth: '1200px', mx: 'auto' }}>
-            <AnimatedRoutes />
-          </Box>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleEnableNotifications}
-            sx={{ mt: 2 }}
-          >
-            Enable Notifications
-          </Button>
-        </Box>
-      </Box>
-      <Footer />
-    </>
+    <AppBar position="fixed">
+      <Toolbar>
+        <Typography variant="h6" sx={{ flexGrow: 1 }}>
+          Remind Candles
+        </Typography>
+        {user ? (
+          <Button color="inherit" onClick={signOutUser}>Logout</Button>
+        ) : (
+          <Button color="inherit" onClick={signIn}>Login</Button>
+        )}
+      </Toolbar>
+    </AppBar>
   );
 };
+
+const Home = () => (
+  <Box sx={{ textAlign: "center", mt: 8 }}>
+    <Typography variant="h4">Home Page</Typography>
+    <Typography>Welcome to the application!</Typography>
+  </Box>
+);
+
+const AnimatedRoutes = () => {
+    const { user, signIn } = useAuth();
+    return (
+        <Routes>
+            <Route path="/" element={user ? <Home /> : <Login />} />
+            <Route
+                path="/signup"
+                element={user ? <Navigate to="/" replace /> : <SignUp signIn={signIn} />}
+            />
+            {/* Add other routes here */}
+        </Routes>
+    );
+};
+
+function AppLayout() {
+  return (
+    <MuiThemeProvider theme={theme}>
+      <CssBaseline />
+      <Navigation />
+      <Box sx={{ mt: "64px", p: 3 }}>
+        <AnimatedRoutes />
+      </Box>
+    </MuiThemeProvider>
+  );
+}
 
 function App() {
   return (
     <Router>
       <AuthProvider>
-        <ThemeProvider>
-          <AppThemedContent />
-        </ThemeProvider>
+        <AppLayout />
       </AuthProvider>
     </Router>
-  );
-}
-
-function AppThemedContent() {
-  const { currentTheme } = useTheme();
-  const { user } = useAuth();
-
-  useEffect(() => {
-    FirebaseService.getInstance();
-  }, []);
-
-  useEffect(() => {
-    const initializeNotifications = async () => {
-      if (user && Notification.permission === 'granted') {
-        try {
-          const token = await requestForToken();
-          if (typeof token === 'string' && token) {
-            await TokenService.getInstance().saveToken(user.uid, token);
-            console.log("Existing notification token refreshed and saved.");
-          }
-        } catch (error) {
-          console.error('Error refreshing notification token:', error);
-        }
-      }
-    };
-    
-    initializeNotifications();
-  }, [user]);
-  
-  return (
-    <MuiThemeProvider theme={currentTheme}>
-      <NotificationProvider>
-        <BirthdayProvider>
-          <WishingProvider>
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <AppContent />
-            </LocalizationProvider>
-          </WishingProvider>
-        </BirthdayProvider>
-      </NotificationProvider>
-    </MuiThemeProvider>
   );
 }
 

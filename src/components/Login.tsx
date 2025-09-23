@@ -30,6 +30,8 @@ export function Login() {
     }
   };
 
+  console.log("Login is using context:", useAuth);
+
   return (
     <Box
       sx={{
@@ -64,4 +66,4 @@ export function Login() {
       )}
     </Box>
   );
-} 
+}

@@ -51,40 +51,36 @@ self.addEventListener("install", (event) => {
 // Activate event - clean up old caches
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
+    caches.keys().then((cacheNames) =>
+      Promise.all(
         cacheNames
           .filter((name) => name !== CACHE_NAME)
           .map((name) => caches.delete(name))
-      );
-    })
+      )
+    )
   );
   self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
-self.addEventListener("fetch", (event) => {
-  event.respondWith(
-    caches.match(event.request).then(
-      (response) => response || fetch(event.request)
-    )
-  );
-});
-
-// Fetch event - only handle GET requests in production
+// ✅ Fetch event - unified handler
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
   const url = new URL(event.request.url);
 
-  // ❌ Skip local dev server requests (Vite, localhost, 127.0.0.1)
-  if (url.origin.includes("127.0.0.1") || url.origin.includes("localhost")) {
+  // ❌ Skip local dev requests (Vite, localhost, 127.0.0.1)
+  if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
     return;
   }
 
   event.respondWith(
     caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+      return response || fetch(event.request).catch(() => {
+        // Optional: fallback offline page or icon
+        if (event.request.destination === "document") {
+          return caches.match("/index.html");
+        }
+      });
     })
   );
 });

@@ -1,26 +1,26 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
-import FirebaseService from './services/FirebaseService';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
 import "./index.css";
 
+// ✅ Include your extra styles if needed
+import "./styles/BirthdayWishes.css";
+import "./styles/glow.css";
+import "./styles/theme.css";
+import "./styles/components.css";
 
-// Initialize Firebase first
-const firebase = FirebaseService.getInstance();
-console.log("Firebase initialized:", firebase);
-
-// Register the service worker
+// ✅ Register service worker
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
     .register("/firebase-messaging-sw.js")
     .then((registration) => {
       console.log("Service Worker registered:", registration);
     })
-    .catch((err) => console.log("Service Worker registration failed:", err));
+    .catch((err) => console.log("SW registration failed:", err));
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>,
+  </React.StrictMode>
 );
