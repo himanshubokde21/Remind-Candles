@@ -16,6 +16,8 @@ import {
   useMediaQuery,
   Tooltip,
   Zoom,
+  Button,
+  Avatar,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -25,7 +27,10 @@ import {
   Cake as CakeIcon,
   CelebrationOutlined as CelebrationIcon,
   NotificationsActive as NotificationsIcon,
+  Login as LoginIcon,
+  Logout as LogoutIcon,
 } from '@mui/icons-material';
+import { useAuth } from '../contexts/AuthContext';
 
 const DRAWER_WIDTH = 240;
 
@@ -66,6 +71,7 @@ export const Navigation = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, signOutUser } = useAuth();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -79,6 +85,26 @@ export const Navigation = () => {
       setMobileOpen(false);
     }
   };
+
+  const handleSignOut = async () => {
+    try {
+      await signOutUser();
+      navigate('/login');
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  };
+
+  // Add Login menu item conditionally
+  const allMenuItems = user ? menuItems : [
+    ...menuItems,
+    { 
+      text: 'Sign In',
+      icon: <LoginIcon sx={{ color: 'error.main' }} />,
+      path: '/login',
+      description: 'Sign in to access all features'
+    }
+  ];
 
   const drawer = (
     <Box>
@@ -96,8 +122,40 @@ export const Navigation = () => {
           Remind Candles
         </Typography>
       </Box>
+      
+      {/* User Info Section */}
+      {user && (
+        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <Avatar 
+              src={user.photoURL || ''} 
+              alt={user.displayName || 'User'}
+              sx={{ width: 32, height: 32 }}
+            />
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+              <Typography variant="subtitle2" noWrap>
+                {user.displayName || 'User'}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" noWrap>
+                {user.email}
+              </Typography>
+            </Box>
+          </Box>
+          <Button
+            size="small"
+            startIcon={<LogoutIcon />}
+            onClick={handleSignOut}
+            fullWidth
+            variant="outlined"
+            color="secondary"
+          >
+            Sign Out
+          </Button>
+        </Box>
+      )}
+
       <List>
-        {menuItems.map((item) => (
+        {allMenuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
             <Tooltip 
               title={item.description}
@@ -169,6 +227,7 @@ export const Navigation = () => {
               display: 'flex',
               alignItems: 'center',
               gap: 1,
+              flexGrow: 1,
             }}
           >
             <CakeIcon sx={{ color: 'primary.main' }} />
@@ -176,6 +235,41 @@ export const Navigation = () => {
               Remind Candles
             </Typography>
           </Box>
+          
+          {/* User Info in Top Bar - Desktop only */}
+          {!isMobile && user && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Avatar 
+                src={user.photoURL || ''} 
+                alt={user.displayName || 'User'}
+                sx={{ width: 32, height: 32 }}
+              />
+              <Typography variant="subtitle2">
+                {user.displayName || 'User'}
+              </Typography>
+              <Button
+                size="small"
+                startIcon={<LogoutIcon />}
+                onClick={handleSignOut}
+                color="inherit"
+              >
+                Sign Out
+              </Button>
+            </Box>
+          )}
+          
+          {/* Sign In Button - Desktop only, when not signed in */}
+          {!isMobile && !user && (
+            <Button
+              startIcon={<LoginIcon />}
+              onClick={() => navigate('/login')}
+              color="primary"
+              variant="contained"
+              size="small"
+            >
+              Sign In
+            </Button>
+          )}
         </Toolbar>
       </AppBar>
       <Box

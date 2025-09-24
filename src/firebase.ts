@@ -23,10 +23,46 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const messaging = getMessaging(app);
 
-// Google Sign-In
+// Google Sign-In with enhanced error handling
 export const signInWithGoogle = async () => {
-  const provider = new GoogleAuthProvider();
-  return await signInWithPopup(auth, provider);
+  try {
+    const provider = new GoogleAuthProvider();
+    
+    // Add additional scopes if needed
+    provider.addScope('email');
+    provider.addScope('profile');
+    
+    // Set custom parameters for OAuth
+    provider.setCustomParameters({
+      prompt: 'select_account'
+    });
+    
+    console.log('🔐 Attempting Google Sign-In...');
+    console.log('🔧 Auth Domain:', import.meta.env.VITE_FIREBASE_AUTH_DOMAIN);
+    console.log('🌐 Current Origin:', window.location.origin);
+    console.log('🌐 Current Host:', window.location.host);
+    
+    const result = await signInWithPopup(auth, provider);
+    console.log('✅ Sign-In successful:', result.user?.displayName);
+    return result;
+  } catch (error: any) {
+    console.error('❌ Google Sign-In Error:', error);
+    console.error('Error code:', error.code);
+    console.error('Error message:', error.message);
+    
+    // Provide more specific error messages
+    if (error.code === 'auth/popup-closed-by-user') {
+      throw new Error('Sign-in was cancelled. Please try again.');
+    } else if (error.code === 'auth/popup-blocked') {
+      throw new Error('Pop-up was blocked by your browser. Please enable pop-ups and try again.');
+    } else if (error.code === 'auth/operation-not-allowed') {
+      throw new Error('Google Sign-In is not enabled. Please contact support.');
+    } else if (error.code === 'auth/unauthorized-domain') {
+      throw new Error('This domain is not authorized for Google Sign-In. Please contact support.');
+    } else {
+      throw new Error(`Sign-in failed: ${error.message}`);
+    }
+  }
 };
 
 // Request FCM token
