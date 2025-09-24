@@ -5,14 +5,12 @@ import { ListPage } from '../pages/ListPage';
 import { CalendarPage } from '../pages/CalendarPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { AboutPage } from '../pages/AboutPage';
+import { Login } from './Login';
 import { PageTransition } from './PageTransition';
 import { Container } from '@mui/material';
 
 export const AnimatedRoutes = () => {
   const location = useLocation();
-
-  // Debugging log
-  console.log("🔎 Current path:", location.pathname);
 
   return (
     <Container 
@@ -47,6 +45,11 @@ export const AnimatedRoutes = () => {
           <Route path="/about" element={
             <PageTransition>
               <AboutPage />
+            </PageTransition>
+          } />
+          <Route path="/login" element={
+            <PageTransition>
+              <Login />
             </PageTransition>
           } />
 
