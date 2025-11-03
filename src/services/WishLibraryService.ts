@@ -1,3 +1,5 @@
+import CryptoJS from "crypto-js";
+
 export interface WishTemplate {
   id: string;
   content: string;
@@ -5,6 +7,9 @@ export interface WishTemplate {
   isDefault?: boolean;
 }
 
+// Use a static key for simplicity. Ideally, use more secure key management.
+const WISH_STORAGE_KEY = "birthdayWishes";
+const WISH_ENCRYPTION_KEY = "A_strong_random_key_should_be_used";
 const DEFAULT_WISHES: WishTemplate[] = [
   {
     id: 'default-1',
@@ -40,9 +45,15 @@ export class WishLibraryService {
   }
 
   private loadWishes(): void {
-    const savedWishes = localStorage.getItem('birthdayWishes');
-    if (savedWishes) {
-      this.wishes = JSON.parse(savedWishes);
+    const encryptedWishes = localStorage.getItem(WISH_STORAGE_KEY);
+    if (encryptedWishes) {
+      try {
+        const decrypted = CryptoJS.AES.decrypt(encryptedWishes, WISH_ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8);
+        this.wishes = JSON.parse(decrypted);
+      } catch (e) {
+        this.wishes = [...DEFAULT_WISHES];
+        this.saveWishes();
+      }
     } else {
       this.wishes = [...DEFAULT_WISHES];
       this.saveWishes();
@@ -50,7 +61,9 @@ export class WishLibraryService {
   }
 
   private saveWishes(): void {
-    localStorage.setItem('birthdayWishes', JSON.stringify(this.wishes));
+    const wishesString = JSON.stringify(this.wishes);
+    const encrypted = CryptoJS.AES.encrypt(wishesString, WISH_ENCRYPTION_KEY).toString();
+    localStorage.setItem(WISH_STORAGE_KEY, encrypted);
   }
 
   public getAllWishes(): WishTemplate[] {
